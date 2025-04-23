@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fluffy-enigma/db"
 	"fluffy-enigma/models"
 	"io/ioutil"
@@ -11,7 +12,70 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+// Prompt: "Create an APIServer that serves the ideas stored in the MongoDB database.
+// The API should have a single endpoint that returns all ideas in JSON format.
+// Use the Go programming language and the MongoDB driver for Go to implement this functionality.
+// The API should handle errors gracefully and return appropriate HTTP status codes.
+// Additionally, implement a function to fetch new ideas from an external API and store them
+// in the database at regular intervals."
+// StartAPIServer starts the HTTP server
+func StartAPIServer() {
+	// Define routes
+	http.HandleFunc("/api/ideas", getIdeasHandler)
+
+	// Start server
+	log.Println("🌐 API Server running on http://localhost:8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatalf("❌ HTTP server error: %v", err)
+	}
+}
+
+// getIdeasHandler returns all stored ideas
+func getIdeasHandler(w http.ResponseWriter, r *http.Request) {
+	// Only allow GET requests
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Find all ideas in the database
+	findOptions := options.Find()
+	findOptions.SetSort(bson.D{{Key: "created_at", Value: -1}}) // Sort by creation date, newest first
+
+	cursor, err := db.IdeaCollection.Find(ctx, bson.M{}, findOptions)
+	if err != nil {
+		log.Println("❌ Failed to fetch ideas:", err)
+		http.Error(w, "Failed to fetch ideas", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	// Decode the documents
+	var ideas []models.Idea
+	if err := cursor.All(ctx, &ideas); err != nil {
+		log.Println("❌ Failed to decode ideas:", err)
+		http.Error(w, "Failed to decode ideas", http.StatusInternalServerError)
+		return
+	}
+
+	// Set headers and encode to JSON
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(ideas); err != nil {
+		log.Println("❌ Failed to encode ideas to JSON:", err)
+		http.Error(w, "Failed to encode ideas", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("📤 Returned %d ideas", len(ideas))
+}
 
 func StartIdeaFetcher() {
 	ticker := time.NewTicker(10 * time.Minute)

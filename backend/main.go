@@ -13,6 +13,9 @@ func main() {
 	db.Connect()           // Connect to MongoDB
 	api.StartIdeaFetcher() // Call the API response function
 
+	// Start the API server in a goroutine
+	go api.StartAPIServer()
+
 	// Set up channel to listen for interrupt signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
