@@ -11,7 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -21,14 +23,16 @@ import (
 // The API should handle errors gracefully and return appropriate HTTP status codes.
 // Additionally, implement a function to fetch new ideas from an external API and store them
 // in the database at regular intervals."
+
 // StartAPIServer starts the HTTP server
 func StartAPIServer() {
-	// Define routes
-	http.HandleFunc("/api/ideas", getIdeasHandler)
+	r := mux.NewRouter()
 
-	// Start server
+	r.HandleFunc("/api/ideas", getIdeasHandler).Methods("GET")
+	r.HandleFunc("/api/ideas/{id}", deleteIdeaHandler).Methods("DELETE")
+
 	log.Println("🌐 API Server running on http://localhost:8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatalf("❌ HTTP server error: %v", err)
 	}
 }
@@ -65,6 +69,7 @@ func getIdeasHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set headers and encode to JSON
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
@@ -77,6 +82,37 @@ func getIdeasHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("📤 Returned %d ideas", len(ideas))
 }
 
+// deleteIdeaHandler deletes an idea by ID
+func deleteIdeaHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	res, err := db.IdeaCollection.DeleteOne(ctx, bson.M{"_id": objID})
+	if err != nil {
+		http.Error(w, "Failed to delete idea", http.StatusInternalServerError)
+		return
+	}
+
+	if res.DeletedCount == 0 {
+		http.Error(w, "Idea not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// StartIdeaFetcher starts a goroutine to fetch ideas from the external API
 func StartIdeaFetcher() {
 	ticker := time.NewTicker(10 * time.Minute)
 
@@ -90,6 +126,7 @@ func StartIdeaFetcher() {
 	}()
 }
 
+// fetchIdea fetches a new idea from the external API and stores it in the database
 func fetchIdea() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

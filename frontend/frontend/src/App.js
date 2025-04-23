@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import startupIllustration from './startup-illustration.png';
 //Prompt: "Create a startup idea generator app that generates 
@@ -6,18 +6,23 @@ import startupIllustration from './startup-illustration.png';
 //Use React for the frontend and CSS for styling.
 //The app should also have a feature to delete ideas and generate new ones.";
 // 🧪 Mock startup ideas
-const mockIdeas = [
-  { id: 1, this: "An AI assistant", that: "for cooking" },
-  { id: 2, this: "A platform", that: "for dog yoga" },
-  { id: 3, this: "A subscription box", that: "for plant lovers" }
-];
-
 function App() {
-  const [ideas, setIdeas] = useState(mockIdeas);
-  const [currentIdea, setCurrentIdea] = useState(mockIdeas[0]);
+  const [ideas, setIdeas] = useState([]);
+  const [currentIdea, setCurrentIdea] = useState(null);
+
+  // Fetch ideas from the backend
+  useEffect(() => {
+    fetch("http://localhost:8080/api/ideas")
+      .then(res => res.json())
+      .then(data => {
+        setIdeas(data);
+        setCurrentIdea(data[0] || null);
+      })
+      .catch(err => console.error("Error fetching ideas:", err));
+  }, []);
 
   const generateIdea = () => {
-    if (ideas.length <= 1) return;
+    if (ideas.length <= 1 || !currentIdea) return;
 
     const currentIndex = ideas.findIndex(idea => idea.id === currentIdea.id);
     const nextIndex = (currentIndex + 1) % ideas.length;
@@ -25,9 +30,19 @@ function App() {
   };
 
   const deleteIdea = (id) => {
-    const updatedIdeas = ideas.filter(idea => idea.id !== id);
-    setIdeas(updatedIdeas);
-    setCurrentIdea(updatedIdeas[0] || null);
+    fetch(`http://localhost:8080/api/ideas/${id}`, {
+      method: 'DELETE'
+    })
+      .then(res => {
+        if (res.ok) {
+          const updatedIdeas = ideas.filter(idea => idea._id !== id);
+          setIdeas(updatedIdeas);
+          setCurrentIdea(updatedIdeas[0] || null);
+        } else {
+          console.error("Failed to delete idea");
+        }
+      })
+      .catch(err => console.error("Delete error:", err));
   };
 
   const getIdeaText = () => {
