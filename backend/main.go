@@ -20,7 +20,7 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	log.Println("🚀 Application running. Press Ctrl+C to exit.")
+	log.Println("🚀 Application running. Visit the website at http://localhost:3000/ to explore the startup ideas. Press Ctrl+C to exit.")
 
 	// Block until we receive a signal
 	<-sigChan
