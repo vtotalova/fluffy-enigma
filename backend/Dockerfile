@@ -10,12 +10,10 @@ WORKDIR /app
 RUN apk add --no-cache git
 
 # Copy go mod files first for better caching
-COPY backend/go.mod backend/go.sum ./
+COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the source code from backend folder
-COPY backend/ ./
-
+COPY . ./
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -o fluffy-enigma .
 

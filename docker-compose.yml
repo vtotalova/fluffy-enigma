@@ -1,32 +1,41 @@
-#Prompt: Create a Docker Compose file for a Go application with MongoDB
 version: '3.8'
-
 services:
-  app:
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: fluffy-enigma-app
+    container_name: fluffy-backend
     restart: unless-stopped
     environment:
       - MONGO_URI=mongodb://mongo:27017
+    ports:
+      - "8080:8080"
     depends_on:
       - mongo
+    networks:
+      - fluffy-network
+
+  frontend:
+    build:
+      context: ./frontend/frontend
+      dockerfile: Dockerfile
+    container_name: fluffy-frontend
+    restart: unless-stopped
     ports:
-      - "8080:8080"  # Adjust if your app exposes a different port
+      - "3000:80"
+    depends_on:
+      - backend
     networks:
       - fluffy-network
 
   mongo:
     image: mongo:6.0
-    container_name: fluffy-enigma-mongo
+    container_name: fluffy-mongo
     restart: unless-stopped
-    environment:
-      - MONGO_INITDB_DATABASE=fluffydb
-    volumes:
-      - mongo-data:/data/db
     ports:
       - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
     networks:
       - fluffy-network
 

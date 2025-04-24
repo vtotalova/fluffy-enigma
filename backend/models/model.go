@@ -13,9 +13,3 @@ type Idea struct {
 	That      string             `bson:"that" json:"that"`
 	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
 }
-
-// APIResponse represents the response from itsthisforthat.com
-type APIResponse struct {
-	This string `json:"this"`
-	That string `json:"that"`
-}
