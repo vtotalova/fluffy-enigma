@@ -37,7 +37,8 @@ func StartAPIServer() {
 	}
 }
 
-// Add this new middleware function
+// Add this new middleware function, referenced this problems: https://stackoverflow.com/questions/78090943/website-using-react-that-works-with-a-go-backend-cors-issue
+// https://stackoverflow.com/questions/71594818/cors-issue-react-axios-frontend-and-golang-backend
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Set CORS headers

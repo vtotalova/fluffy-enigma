@@ -31,6 +31,7 @@ function App() {
     setCurrentIdea(ideas[nextIndex]);
   };
 
+  // //Prompt CoPilot: "Give me a function to delete an idea from the list of ideas based on the generateIdea()."
   const deleteIdea = async () => {
     if (!currentIdea) {
       console.log("No current idea to delete");
@@ -64,24 +65,7 @@ function App() {
       console.error("Delete error:", err);
     }
   };
-  // //Prompt CoPilot: "Give me a function to delete an idea from the list of ideas based on the generateIdea()."
-  // const deleteIdea = () => {
-  //   if (!currentIdea) return;
-  //   fetch(`http://localhost:8080/api/ideas/${currentIdea.id}`, {
-  //     method: 'DELETE'
-  //   })
-  //     .then(res => {
-  //       if (res.ok) {
-  //         const updatedIdeas = ideas.filter(idea => idea.id !== currentIdea.id);
-  //         setIdeas(updatedIdeas);
-  //         setCurrentIdea(updatedIdeas[0] || null);
-  //       } else {
-  //         console.error("Failed to delete idea");
-  //       }
-  //     })
-  //     .catch(err => console.error("Delete error:", err));
-  // };
-
+  
   const getIdeaText = () => {
     if (!currentIdea) return "No ideas available";
     return `${currentIdea.this} for ${currentIdea.that}`;
@@ -110,7 +94,6 @@ function App() {
             </div>
         </center>
         </div>
-
         <div className="content-right">
           <div className="illustration">
             <img src={startupIllustration} alt="Startup illustration" />
